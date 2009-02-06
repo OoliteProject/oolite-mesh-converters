@@ -128,7 +128,7 @@ for inputfilename in inputfilenames:
 				if (group_token == 'off'):
 					group_token = 0
 				else:
-					group_token = int(tokens[1])
+					group_token = int(group_token)
 				if (group_token > 0):
 					smoothing_group = smoothing_group + 1
 					if (smoothing_group > 255):
