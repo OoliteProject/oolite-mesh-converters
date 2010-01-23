@@ -14,8 +14,21 @@ only.
 """
 
 
-include_face_normals	= 0		# If 1, per-face normals are generated for Oolite 1.73 and earlier. If 0, file is smaller.
-pretty_output			= 0		# If 0, optimize for size and loading speed. If 1, use more legible format.
+# If 1, per-face normals are generated for Oolite 1.73 and earlier. If 0, file is smaller.
+include_face_normals	= 0
+
+# If 0, optimize for size and loading speed. If 1, use more legible format.
+pretty_output			= 0
+
+# Specify winding mode. Winding determines which side of a triangle is out.
+# If a model appears "inside-out" or has missing faces, you need to adjust this.
+#   0: maintain original winding.
+#   1: reverse winding.
+#   2: select winding automatically for each face.
+#   3: select winding automatically for each face, but buggily (the same
+#      behaviour as Oolite for old-style model files). You probably don't want
+#      this.
+winding_mode			= 2
 
 
 import sys, string, math
@@ -107,14 +120,78 @@ def normalize(n):
 	return x * scale, y * scale, z * scale
 
 
+def vector_add(v1, v2):
+	return v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]
+
+
+def vector_subtract(v1, v2):
+	return v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]
+
+
+def vector_flip(v):
+	return vector_subtract((0, 0, 0), v)
+
+
+def dot_product(v1, v2):
+	return v1[0] * v2[0] + v1[1] * v2[1] + v1[1] * v2[1]
+
+
+def cross_product(v1, v2):
+	x = v1[1] * v2[2] - v2[1] * v1[2]
+	y = v1[2] * v2[0] - v2[2] * v1[0]
+	z = v1[0] * v2[1] - v2[0] * v1[1]
+	return x, y, z
+
+
 def average_normal(n1, n2, n3):
 	""" average_normal
 		Calculate the normalized sum of three vectors.
 	"""
-	x1, y1, z1 = n1
-	x2, y2, z2 = n2
-	x3, y3, z3 = n3
-	return normalize((x1 + x2 + x3, y1 + y2 + y3, z1 + z2 + z3))
+	return normalize(vector_add(n1, vector_add(n2, n3)))
+
+
+def normal_to_surface(v1, v2, v3):
+	""" normal_to_surface
+		Find a normal to a surface spanned by three points.
+	"""
+	d0 = vector_subtract(v2, v1)
+	d1 = vector_subtract(v3, v2)
+	return normalize(cross_product(d0, d1))
+
+
+def should_reverse_winding(v1, v2, v3, normal):
+	""" should_reverse_winding
+		Determine whether to reverse the winding of the triangle (v1, v2, v3)
+		based on current winding mode and face normal.
+	"""
+	if winding_mode == 0:
+		return False
+	
+	elif winding_mode == 1:
+		return True
+	
+	else:
+		calculatedNormal = normal_to_surface(v3, v2, v1)
+		if normal == (0, 0, 0):
+			normal = vector_flip(calculatedNormal)
+		
+		if winding_mode == 2:
+			# Guess, using the assumptions that normals should point more "outwards"
+			# than "inwards".
+			if (dot_product(normal, calculatedNormal) < 0.0):
+				return True
+			else:
+				return False
+		
+		elif winding_mode == 3:
+			# Buggy calculation traditionally used by Oolite.
+			if (normal[0] * calculatedNormal[0] < 0.0) or (normal[1] * calculatedNormal[1] < 0.0) or (normal[2] * calculatedNormal[2] < 0.0):
+				return True
+			else:
+				return False
+	
+	print "Unknown normal winding mode %u" % ( winding_mode )
+	exit(-1)
 
 
 inputfilenames = sys.argv[1:]
@@ -270,11 +347,17 @@ for inputfilename in inputfilenames:
 						rv1 = resolve_vertex(vertex[v1], normal[vn1], index_for_vert_and_norm, vertex_lines_out, normals_lines_out)
 						rv2 = resolve_vertex(vertex[v2], normal[vn2], index_for_vert_and_norm, vertex_lines_out, normals_lines_out)
 						rv3 = resolve_vertex(vertex[v3], normal[vn3], index_for_vert_and_norm, vertex_lines_out, normals_lines_out)
+						face_normal = average_normal(normal[vn1], normal[vn2], normal[vn3]);
+						
+						if should_reverse_winding(vertex[v1], vertex[v2], vertex[v3], face_normal):
+							temp = rv1
+							rv1 = rv3
+							rv3 = temp
 						
 						if not include_face_normals:
 							face_normal_str = '0 0 0'
 						else:
-							face_normal_str = format_vertex(average_normal(normal[vn1], normal[vn2], normal[vn3]))
+							face_normal_str = format_vertex(face_normal)
 						
 						n_faces = n_faces + 1
 						face.append((rv1, rv2, rv3))
