@@ -117,7 +117,7 @@ for inputfilename in inputfilenames:
 	#print "\n"
 	# find faces next
 	# use red colour to show smoothing groups
-	smoothing_group = 127
+	smoothing_group = 1
 	group_token = 0;
 	for line in lines:
 		tokens = string.split(line)
@@ -129,10 +129,10 @@ for inputfilename in inputfilenames:
 					group_token = 0
 				else:
 					group_token = int(group_token)
-				if (group_token > 0):
-					smoothing_group = smoothing_group + 1
-					if (smoothing_group > 255):
-						smoothing_group = 0
+				if group_token > 0:
+					smoothing_group = group_token
+				else:
+					smoothing_group = 0
 			if (tokens[0] == 'usemtl'):
 				textureName = tokens[1]
 				if (materials.has_key(textureName)):
@@ -169,7 +169,7 @@ for inputfilename in inputfilenames:
 						# negate the normal to allow correct texturing...
 						norm = ( -xp[0]/det, -xp[1]/det, -xp[2]/det)
 						face.append((v1,v2,v3))
-						faces_lines_out.append('%d,127,127,\t%.5f,%.5f,%.5f,\t3,\t%d,%d,%d\n' % (smoothing_group,norm[0],norm[1],norm[2],v1,v2,v3))
+						faces_lines_out.append('%d,0,0,\t%.5f,%.5f,%.5f,\t3,\t%d,%d,%d\n' % (smoothing_group,norm[0],norm[1],norm[2],v1,v2,v3))
 						#
 						# check if we're in a non-smoothed group - if so keep incrementing the 'red' smoothing_group value...
 						#
