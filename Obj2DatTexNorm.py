@@ -31,7 +31,7 @@ pretty_output			= 0
 winding_mode			= 2
 
 
-import sys, string, math
+import sys, string, math, decimal
 
 def vertex_reference(n, nv):
 	if n < 0:
@@ -59,12 +59,28 @@ def format_number(n):
 	"""	format_number
 		Format a float with up to five decimal places, making it as short as
 		possible without discarding information.
+		
+		Based on accepted answer by samplebias at
+		http://stackoverflow.com/questions/5807952/removing-trailing-zeros-in-python
 	"""
-	result = ('%.5f' % n).rstrip('.0')
-	if result == "":
-		return "0"
+	try:
+		dec = decimal.Decimal('%.5f' % n)
+	except:
+		return 'bad'
+	tup = dec.as_tuple()
+	delta = len(tup.digits) + tup.exponent
+	digits = ''.join(str(d) for d in tup.digits)
+	if delta <= 0:
+		zeros = abs(tup.exponent) - len(tup.digits)
+		val = '0.' + ('0'*zeros) + digits
 	else:
-		return result
+		val = digits[:delta] + ('0'*tup.exponent) + '.' + digits[delta:]
+	val = val.rstrip('0')
+	if val[-1] == '.':
+		val = val[:-1]
+	if tup.sign:
+		return '-' + val
+	return val
 
 
 def format_vertex(v):
