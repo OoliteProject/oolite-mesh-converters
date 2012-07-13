@@ -30,6 +30,9 @@ pretty_output			= 0
 #      this.
 winding_mode			= 2
 
+# If 1, normals (both face normals and vertex normals) are inverted before being written.
+flip_normals			= 0
+
 
 import sys, string, math, decimal
 
@@ -91,6 +94,13 @@ def format_vertex(v):
 		return '%s %s %s' % (format_number(x), format_number(y), format_number(z))
 
 
+def format_normal(n):
+	if flip_normals:
+		return format_vertex(vector_flip(n))
+	else:
+		return format_vertex(n)
+
+
 def format_textcoord(st):
 	if pretty_output:
 		return '% .5f,% .5f' % st
@@ -122,7 +132,7 @@ def resolve_vertex(v, vn, index_for_vert_and_norm, vertex_lines_out, normals_lin
 		index_for_vert_and_norm[key] = result
 		
 		vertex_lines_out.append(format_vertex(v) + '\n')
-		normals_lines_out.append(format_vertex(vn) + '\n')
+		normals_lines_out.append(format_normal(vn) + '\n')
 		
 		return result
 
@@ -380,7 +390,7 @@ for inputfilename in inputfilenames:
 						if not include_face_normals:
 							face_normal_str = '0 0 0'
 						else:
-							face_normal_str = format_vertex(face_normal)
+							face_normal_str = format_normal(face_normal)
 						
 						n_faces = n_faces + 1
 						face.append((rv1, rv2, rv3))
