@@ -350,9 +350,16 @@ for inputfilename in inputfilenames:
 						face_normal = average_normal(normal[vn1], normal[vn2], normal[vn3]);
 						
 						if should_reverse_winding(vertex[v1], vertex[v2], vertex[v3], face_normal):
+							# If reversing, swap first and third vertex index and tex coord.
+							# Note that we don't need to swap normals here, because they're indexed
+							# in the same series as vertices, but texture coords are stored
+							# separately with the faces.
 							temp = rv1
 							rv1 = rv3
 							rv3 = temp
+							temp = vt1
+							vt1 = vt3
+							vt3 = temp
 						
 						if not include_face_normals:
 							face_normal_str = '0 0 0'
