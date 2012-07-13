@@ -1,9 +1,9 @@
 #!/usr/bin/python
 
-# EXTENSIONS  : "obj" "OBJ"					# Accepted file extentions
-# OSTYPES     : "****"						# Accepted file types
-# ROLE        : Editor						# Role (Editor, Viewer, None)
-# SERVICEMENU : Obj2DatTex/Convert to .dat	# Name of Service menu item
+# EXTENSIONS  : "obj" "OBJ"						# Accepted file extentions
+# OSTYPES     : "****"							# Accepted file types
+# ROLE        : Editor							# Role (Editor, Viewer, None)
+# SERVICEMENU : Obj2DatTexNorm/Convert to .dat	# Name of Service menu item
 
 """
 This script takes a Wavefront .obj file
@@ -14,27 +14,10 @@ only.
 """
 
 
-# If 1, per-face normals are generated for Oolite 1.73 and earlier. If 0, file is smaller.
-include_face_normals	= 0
-
-# If 0, optimize for size and loading speed. If 1, use more legible format.
-pretty_output			= 0
-
-# Specify winding mode. Winding determines which side of a triangle is out.
-# If a model appears "inside-out" or has missing faces, you need to adjust this.
-#   0: maintain original winding.
-#   1: reverse winding.
-#   2: select winding automatically for each face.
-#   3: select winding automatically for each face, but buggily (the same
-#      behaviour as Oolite for old-style model files). You probably don't want
-#      this.
-winding_mode			= 2
-
-# If 1, normals (both face normals and vertex normals) are inverted before being written.
-flip_normals			= 0
+args = None
 
 
-import sys, string, math, decimal
+import sys, os, string, argparse, math, decimal
 
 def vertex_reference(n, nv):
 	if n < 0:
@@ -87,7 +70,7 @@ def format_number(n):
 
 
 def format_vertex(v):
-	if pretty_output:
+	if args.pretty_output:
 		return '% .5f,% .5f,% .5f' % v
 	else:
 		x, y, z = v
@@ -95,14 +78,14 @@ def format_vertex(v):
 
 
 def format_normal(n):
-	if flip_normals:
+	if args.flip_normals:
 		return format_vertex(vector_flip(n))
 	else:
 		return format_vertex(n)
 
 
 def format_textcoord(st):
-	if pretty_output:
+	if args.pretty_output:
 		return '% .5f,% .5f' % st
 	else:
 		s, t = st
@@ -190,10 +173,10 @@ def should_reverse_winding(v1, v2, v3, normal):
 		Determine whether to reverse the winding of the triangle (v1, v2, v3)
 		based on current winding mode and face normal.
 	"""
-	if winding_mode == 0:
+	if args.winding_mode == 0:
 		return False
 	
-	elif winding_mode == 1:
+	elif args.winding_mode == 1:
 		return True
 	
 	else:
@@ -201,7 +184,7 @@ def should_reverse_winding(v1, v2, v3, normal):
 		if normal == (0, 0, 0):
 			normal = vector_flip(calculatedNormal)
 		
-		if winding_mode == 2:
+		if args.winding_mode == 2:
 			# Guess, using the assumptions that normals should point more "outwards"
 			# than "inwards".
 			if (dot_product(normal, calculatedNormal) < 0.0):
@@ -209,29 +192,95 @@ def should_reverse_winding(v1, v2, v3, normal):
 			else:
 				return False
 		
-		elif winding_mode == 3:
+		elif args.winding_mode == 3:
 			# Buggy calculation traditionally used by Oolite.
 			if (normal[0] * calculatedNormal[0] < 0.0) or (normal[1] * calculatedNormal[1] < 0.0) or (normal[2] * calculatedNormal[2] < 0.0):
 				return True
 			else:
 				return False
 	
-	print "Unknown normal winding mode %u" % ( winding_mode )
+	print 'Unknown normal winding mode %u' % ( args.winding_mode )
 	exit(-1)
 
 
-inputfilenames = sys.argv[1:]
-print "converting..."
-print inputfilenames
-for inputfilename in inputfilenames:
-	outputfilename = inputfilename.lower().replace(".obj", ".dat")
-	if (outputfilename == inputfilename):
-		outputfilename = outputfilename,append(".1")
-	print inputfilename+"->"+outputfilename
-	inputfile = open( inputfilename, "r")
-	lines = inputfile.read().splitlines(0)
-	outputfile = open( outputfilename, "w")
-	mode = 'SKIP'
+class ListWindingModesAction(argparse.Action):
+	
+	""" ListWindingModesAction
+		Argparse action to handle the --list-winding-modes option. This is
+		implemented as an action so we don't get the standard "error: too few
+		arguments" message.
+		
+		Based on argparse's _HelpAction.
+	"""
+	
+	def __init__(self,
+				 option_strings,
+				 dest=argparse.SUPPRESS,
+				 default=argparse.SUPPRESS,
+				 help=None):
+		super(ListWindingModesAction, self).__init__(
+			  option_strings=option_strings,
+			  dest=dest,
+			  default=default,
+			  nargs=0,
+			  help=help)
+	
+	def __call__(self, parser, namespace, values, option_string=None):
+		print '''Winding determines which side of a triangle is the outside.
+The --winding-mode option controls how the winding is selected for each
+triangle. If a model appears "inside-out" or has missing faces, you need
+to adjust this.
+
+Available modes:
+  0: maintain the OBJ file's original winding.
+  1: reverse the OBJ file's winding.
+  2: select winding automatically for each face based on normals.
+  3: select winding automatically for each face, but buggily (the same
+     behaviour as Oolite for old-style model files). You probably don't
+     want this.'''
+		parser.exit()
+
+
+
+
+
+
+argParser = argparse.ArgumentParser(description='''Convert OBJ meshes to Oolite DAT format.
+												   This tool preserves normals (face directions for lighting purposes)
+												   stored in the OBJ file, rather than making Oolite recalculate them.''')
+argParser.add_argument('files', nargs='+',
+				  help='the files to convert')
+argParser.add_argument('-w', '--winding-mode', type=int, default=2, metavar='MODE', dest='winding_mode',
+				  help='''Specify winding mode (default: %(default)s). Winding determines which side of a triangle is out.
+						  Run %(prog)s --list-winding-modes for more information.''')
+argParser.add_argument('-f', '--flip-normals', action='store_true', dest='flip_normals',
+					   help='Reverse normals; this turns the lighting inside out without affecting face visibility')
+argParser.add_argument('--include-face-normals', action='store_true', dest='include_face_normals',
+					   help=argparse.SUPPRESS) # No help because this is only useful when targeting versions earlier than 1.74.
+argParser.add_argument('-p', '--pretty-output', action='store_true', dest='pretty_output',
+					   help='Create a file that\'s easier for humans to read, but larger and slower to parse')
+
+argParser.add_argument('-l', '--list-winding-modes', action=ListWindingModesAction,
+					   help='Show the available winding modes and exit')
+
+args = argParser.parse_args()
+
+
+for inputFileName in args.files:
+	# Select output name and open files
+	outputFileName = inputFileName.lower().replace('.obj', '.dat')
+	if outputFileName == inputFileName:
+		outputFileName = outputFileName,append('.1')
+	inputDisplayName = os.path.basename(inputFileName)
+	outputDisplayName = os.path.basename(outputFileName)
+	
+	print inputDisplayName + ' -> ' + outputDisplayName
+	
+	inputFile = open(inputFileName, 'r')
+	lines = inputFile.read().splitlines(0)
+	outputFile = open(outputFileName, 'w')
+	
+	### Set up state used in parsing and generating output
 	vertex_lines_out = ['VERTEX\n']
 	faces_lines_out = ['FACES\n']
 	normals_lines_out = ['NORMALS\n']
@@ -256,20 +305,16 @@ for inputfilename in inputfilenames:
 	materials_used = []
 	max_v = [0.0, 0.0, 0.0]
 	min_v = [0.0, 0.0, 0.0]
-	# find materials from mtllib
+	
+	### Find materials from material library
 	for line in lines:
 		tokens = string.split(line)
-		#print "line :"
-		#print line
-		#print "tokens :"
-		#print tokens
 		if tokens != []:
 			if tokens[0] == 'mtllib':
-				path = string.split(inputfilename, '/')
-				path[-1] = tokens[1]
-				materialfilename = string.join(path,'/')
-				print "going to open material library file: %s" % materialfilename
-				infile = open( materialfilename, "r")
+				path = os.path.dirname(inputFileName)
+				materialfilename = os.path.join(path, tokens[1]);
+				print '  Material library file: %s' % materialfilename
+				infile = open( materialfilename, 'r')
 				mlines = infile.read().splitlines(0)
 				newMaterial = 0
 				for mline in mlines:
@@ -282,23 +327,23 @@ for inputfilename in inputfilenames:
 							if newMaterial:
 								name = tokens1[1]
 								materials_used.append(name)
-								print "Material %s -> %s" % (newMaterialName, name)
-								if pretty_output:
+								print '  Material %s -> %s' % (newMaterialName, name)
+								if args.pretty_output:
 									materials[newMaterialName] = name
 								else:
 									index = len(materials)
 									materials[newMaterialName] = index
 									names_lines_out.append(name + '\n')
 							newMaterial = 0
-	#print "materials :"
-	#print materials
+	
+	### Print materials
 	# find geometry vertices first
 	for line in lines:
 		tokens = string.split(line)
 		if tokens != []:
 			if tokens[0] == 'v':
 				n_verts = n_verts + 1
-				# negate x value for vertex to allow correct texturing...
+				# Negate x value for vertex to compensate for different coordinate conventions.
 				x = -float(tokens[1])
 				y = float(tokens[2])
 				z = float(tokens[3])
@@ -326,6 +371,7 @@ for inputfilename in inputfilenames:
 			if tokens[0] == 'vt':
 				uv.append((float(tokens[1]), 1.0 - float(tokens[2])))
 	
+	### Parse geometry
 	group_token = 0
 	for line in lines:
 		tokens = string.split(line)
@@ -338,7 +384,6 @@ for inputfilename in inputfilenames:
 				texture.append(textureName)
 				uvsForTexture[textureName] = n_verts * [[]]
 			if (tokens[0] == 'f'):
-				#print "line: %s" % line
 				while (len(tokens) >=4):
 					bits = string.split(tokens[1], '/')
 					v1 = vertex_reference(int(bits[0]), n_verts)
@@ -358,13 +403,11 @@ for inputfilename in inputfilenames:
 						vt3 = vertex_reference(int(bits[1]), n_verts)
 					else:
 						if interpretTexture:
-							print "File does not provide texture coordinates! Materials will not be exported."
+							print 'File does not provide texture coordinates! Materials will not be exported.'
 						interpretTexture = 0
 					if (bits[2] > ''):
 						vn3 = vertex_reference(int(bits[2]), n_normals)
 					
-					#print "face (geometry): %d %d %d" % (v1, v2, v3)
-					#print "face (textures): %d %d %d\n" % (vt1, vt2, vt3)
 					d0 = (vertex[v2][0] - vertex[v1][0], vertex[v2][1] - vertex[v1][1], vertex[v2][2] - vertex[v1][2])
 					d1 = (vertex[v3][0] - vertex[v2][0], vertex[v3][1] - vertex[v2][1], vertex[v3][2] - vertex[v2][2])
 					xp = (d0[1] * d1[2] - d0[2] * d1[1], d0[2] * d1[0] - d0[0] * d1[2], d0[0] * d1[1] - d0[1] * d1[0])
@@ -387,7 +430,7 @@ for inputfilename in inputfilenames:
 							vt1 = vt3
 							vt3 = temp
 						
-						if not include_face_normals:
+						if not args.include_face_normals:
 							face_normal_str = '0 0 0'
 						else:
 							face_normal_str = format_normal(face_normal)
@@ -403,29 +446,27 @@ for inputfilename in inputfilenames:
 							uvsForTexture[textureName][v3] = uv[vt3]
 							uvsForFace.append([ uv[vt1], uv[vt2], uv[vt3]])
 					tokens = tokens[:2]+tokens[3:]
-	# begin final output...
-	outputfile.write('// output from Obj2DatTexNorm.py Wavefront text file conversion script\n')
-	outputfile.write('// (c) 2005-2010 By Giles Williams and Jens Ayton\n')
-	outputfile.write('// \n')
-	outputfile.write('// original file: "%s"\n' % inputfilename)
-	outputfile.write('// \n')
-	outputfile.write('// model size: %.3f x %.3f x %.3f\n' % ( max_v[0]-min_v[0], max_v[1]-min_v[1], max_v[2]-min_v[2]))
-	outputfile.write('// \n')
-	outputfile.write('// materials used: %s\n' % materials_used)
-	outputfile.write('// \n')
-	outputfile.write('NVERTS %d\n' % resolved_vertex_count)
-	outputfile.write('NFACES %d\n' % n_faces)
-	outputfile.write('\n')
-	outputfile.writelines(vertex_lines_out)
-	outputfile.write('\n')
-	outputfile.writelines(faces_lines_out)
-	outputfile.write('\n')
-	# check that we have textures for every vertex...
+	
+	### Write output.
+	outputFile.write('// Converted by Obj2DatTexNorm.py Wavefront OBJ file conversion script\n')
+	outputFile.write('// (c) 2005-2012 By Giles Williams and Jens Ayton\n')
+	outputFile.write('// \n')
+	outputFile.write('// original file: "%s"\n' % inputDisplayName)
+	outputFile.write('// \n')
+	outputFile.write('// model size: %.3f x %.3f x %.3f\n' % ( max_v[0]-min_v[0], max_v[1]-min_v[1], max_v[2]-min_v[2]))
+	outputFile.write('// \n')
+	outputFile.write('// materials used: %s\n' % materials_used)
+	outputFile.write('// \n')
+	outputFile.write('NVERTS %d\n' % resolved_vertex_count)
+	outputFile.write('NFACES %d\n' % n_faces)
+	outputFile.write('\n')
+	outputFile.writelines(vertex_lines_out)
+	outputFile.write('\n')
+	outputFile.writelines(faces_lines_out)
+	outputFile.write('\n')
+	
+	# Check that we have textures for every vertex
 	okayToWriteTexture = 1
-	#print "uvsForTexture :"
-	#print uvsForTexture
-	#print "uvsForFace :"
-	#print uvsForFace
 	if (len(textureForFace) != len(face)):
 		okayToWriteTexture = 0
 	if (len(uvsForFace) != len(face)):
@@ -433,28 +474,28 @@ for inputfilename in inputfilenames:
 	for texture in textureForFace:
 		if (texture == ''):
 			okayToWriteTexture = 0
-	# if we're all clear then write out the texture uv coordinates
+	
+	# If we're all clear then write out the texture uv coordinates.
 	if (okayToWriteTexture):
-		outputfile.write('TEXTURES\n')
+		outputFile.write('TEXTURES\n')
 		for i in range(0, len(face)):
 			facet = face[i]
 			texture = textureForFace[i]
 			uvForVertex = uvsForTexture[texture]
-			outputfile.write('%s\t1.0 1.0\t%s\t%s\t%s\n' % (texture, format_textcoord(uvsForFace[i][0]), format_textcoord(uvsForFace[i][1]), format_textcoord(uvsForFace[i][2])))
-	outputfile.write('\n')
+			outputFile.write('%s\t1.0 1.0\t%s\t%s\t%s\n' % (texture, format_textcoord(uvsForFace[i][0]), format_textcoord(uvsForFace[i][1]), format_textcoord(uvsForFace[i][2])))
+	outputFile.write('\n')
 	
+	# Write NAMES section if used (textures in place and not pretty printing)
 	if len(names_lines_out) != 0:
-		outputfile.write('NAMES %u\n' % len(names_lines_out))
-		outputfile.writelines(names_lines_out)
-		outputfile.write('\n')
+		outputFile.write('NAMES %u\n' % len(names_lines_out))
+		outputFile.writelines(names_lines_out)
+		outputFile.write('\n')
 	
-	outputfile.writelines(normals_lines_out)
-	outputfile.write('\n')
-	outputfile.write('END\n')
-	outputfile.close();
+	outputFile.writelines(normals_lines_out)
+	outputFile.write('\n')
+	outputFile.write('END\n')
+	outputFile.close()
+	inputFile.close()
 
-print "done"
-print ""
-#
-#	end
-#
+
+print 'Done.\n'
