@@ -249,6 +249,8 @@ argParser.add_argument('-f', '--flip-normals', action='store_true', dest='flip_n
                        help='Reverse normals; this turns the lighting inside out without affecting face visibility')
 argParser.add_argument('--include-face-normals', action='store_true', dest='include_face_normals',
                        help=argparse.SUPPRESS) # No help because this is only useful when targeting versions earlier than 1.74.
+argParser.add_argument('-m', '--preserve-material-names', action='store_false', dest='rename_materials',
+                       help='Keep abstract material names from material library, instead of renaming materials after their diffuse map. Only use if you\'ll be creating material dictionaries.')
 argParser.add_argument('-p', '--pretty-output', action='store_true', dest='pretty_output',
                        help='Create a file that\'s easier for humans to read, but larger and slower to parse')
 
@@ -366,7 +368,7 @@ for input_file_name in args.files:
     texture_for_face=[]
     texcoords_for_face=[]
     interpret_texture = 0
-    materials = {}
+    material_rename = {}
     index_for_vert_and_norm = {}
     names_lines_out = []
     materials_used = []
@@ -382,25 +384,36 @@ for input_file_name in args.files:
                 material_file_name = os.path.join(path, tokens[1])
                 print '  Material library file: %s' % material_file_name
                 material_file = open(material_file_name, 'r')
-                new_material = 0
+                new_material = False
                 for material_line in material_file.read().splitlines(0):
                     material_tokens = string.split(material_line)
                     if material_tokens != []:
                         if material_tokens[0] == 'newmtl':
                             new_material_name = material_tokens[1]
-                            new_material = 1
+                            if args.rename_materials:
+                                # Let map_Kd handler deal with material table.
+                                # FIXME: produce cleaner results if there is no diffuse map.
+                                new_material = True
+                            else:
+                                # Store material key in used material list and (if using short names) the rename table.
+                                materials_used.append(new_material_name)
+                                if not args.pretty_output:
+                                    material_rename[new_material_name] = len(material_rename)
+                                    names_lines_out.append(new_material_name + '\n')
+                        
                         if material_tokens[0] == 'map_Kd':
+                            # If this is the first diffuse map for this material...
                             if new_material:
+                                # Add it to the used materials list and rename table.
                                 name = material_tokens[1]
                                 materials_used.append(name)
                                 print '  Material %s -> %s' % (new_material_name, name)
                                 if args.pretty_output:
-                                    materials[new_material_name] = name
+                                    material_rename[new_material_name] = name
                                 else:
-                                    index = len(materials)
-                                    materials[new_material_name] = index
+                                    material_rename[new_material_name] = len(material_rename)
                                     names_lines_out.append(name + '\n')
-                            new_material = 0
+                            new_material = False
                 material_file.close()
     
     ### Parse vertices
@@ -441,8 +454,8 @@ for input_file_name in args.files:
         if (tokens != []):
             if (tokens[0] == 'usemtl'):
                 textureName = tokens[1]
-                if (materials.has_key(textureName)):
-                    textureName = materials[textureName]
+                if (material_rename.has_key(textureName)):
+                    textureName = material_rename[textureName]
                 interpret_texture = 1
                 texture.append(textureName)
             
