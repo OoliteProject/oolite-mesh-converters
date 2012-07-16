@@ -77,7 +77,7 @@ def is_vector_normalized(v):
     """ is_vector_normalized
         Test whether a vector is within 1e-5 of a normalized vector.
     """
-    return abs(vector_magnitude(v) - 1.0) < 1e-5;
+    return abs(vector_magnitude(v) - 1.0) < 1e-5
 
 
 def vector_dot_product(v1, v2):
@@ -441,7 +441,7 @@ for input_file_name in args.files:
                 z = float(tokens[3])
                 n = (x, y, z)
                 if not is_vector_normalized(n):
-                    print 'Warning: read unnormalized normal %s' % format_vector(n);
+                    print 'Warning: read unnormalized normal %s' % format_vector(n)
                 normal.append(vector_normalize((x, y, z)))
                 
             if tokens[0] == 'vt':
