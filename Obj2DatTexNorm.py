@@ -1,4 +1,6 @@
 #!/usr/bin/python
+# -*- coding: utf8 -*-
+
 
 # EXTENSIONS  : "obj" "OBJ"                     # Accepted file extentions
 # OSTYPES     : "****"                          # Accepted file types
@@ -25,13 +27,102 @@ import decimal
 args = None
 
 
-def vertex_reference(n, nv):
-    if n < 0:
-        return n + nv
-    else:
-        return n - 1
+#
+# Vector maths libary
+# These functions work on tuples of three numbers representing geometrical
+# vector in 3-space.
+#
+def vector_add(v1, v2):
+    """ vector_add
+        Add two vectors.
+    """
+    return v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]
 
 
+def vector_subtract(v1, v2):
+    """ vector_subtract
+        Subtract v2 from v1.
+    """
+    return v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]
+
+
+def vector_scale(v, s):
+    """ vector_scale
+        Scale a vector by multiplying each component with a scalar.
+    """
+    x, y, z = v
+    return x * s, y * s, z * s
+
+
+def vector_flip(v):
+    return vector_subtract((0, 0, 0), v)
+
+
+def vector_magnitude(v):
+    """ vector_magnitude
+        Return the magnitude/length of a vector, denoted ‖v‖.
+    """
+    x, y, z = v
+    return math.sqrt(x * x + y * y + z * z)
+
+
+def vector_normalize(v):
+    """ vector_normalize
+        Return a normalized vector, i.e. one scaled so its magnitude is 1.
+    """
+    return vector_scale(v, 1.0 / vector_magnitude(v))
+
+
+def is_vector_normalized(v):
+    """ is_vector_normalized
+        Test whether a vector is within 1e-5 of a normalized vector.
+    """
+    return abs(vector_magnitude(v) - 1.0) < 1e-5;
+
+
+def vector_dot_product(v1, v2):
+    """ vector_dot_product
+        Return the dot product (scalar product) of two vectors.
+        The dot product v1 · v2 = ‖v1‖ ‖v2‖ cos θ, where θ is the angle between
+        the two vectors. If both vectors are normalized, v1 · v2 = cos θ.
+    """
+    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+
+
+def vector_cross_product(v1, v2):
+    """ vector_cross_product
+        Returns the cross product (vector product) of two vectors.
+        The cross product v1 × v2 is perpendicular to both v1 and v2 (oriented
+        such that v1, v2, v1 × v2 form a clockwise wound triangle as seen from
+        the origin), its magnitude is ‖v1‖ ‖v2‖ sin θ, where θ is the angle
+        between v1 and v2. Note that v1 × v2 = -(v2 × v1).
+    """
+    x = v1[1] * v2[2] - v2[1] * v1[2]
+    y = v1[2] * v2[0] - v2[2] * v1[0]
+    z = v1[0] * v2[1] - v2[0] * v1[1]
+    return x, y, z
+
+
+def vector_normal_to_surface(v1, v2, v3):
+    """ vector_normal_to_surface
+        Find a normal to a surface spanned by three points.
+    """
+    d0 = vector_subtract(v2, v1)
+    d1 = vector_subtract(v3, v2)
+    return vector_normalize(vector_cross_product(d0, d1))
+
+
+def average_normal(n1, n2, n3):
+    """ average_normal
+        Calculate the normalized sum of three vectors.
+    """
+    return vector_normalize(vector_add(n1, vector_add(n2, n3)))
+
+
+
+#
+# Output formatting
+#
 def clean_vector(v):
     """ clean_vector
         "Cleans" a vector by converting any negative zeros or values that will
@@ -101,133 +192,9 @@ def format_textcoord(st):
         return '%s %s' % (format_number(s), format_number(t))
 
 
-resolved_vertex_count = 0
-def resolve_vertex(v, vn, index_for_vert_and_norm, vertex_lines_out, normals_lines_out):
-    """ resolve_vertex
-        Returns a unique index for each (vertex, normal) pair. When a new pair
-        is seen, a new index is generated and the relevant lines are added to
-        the output buffers for the VERTEX and NORMALS sections.
-        
-        This is necessary because OBJ uses separate index spaces for vertex
-        positions and normals, but DAT requires one index per pair.
-    """
-    global resolved_vertex_count
-    v = clean_vector(v)
-    vn = clean_vector(vn)
-    key = v, vn
-    if key in index_for_vert_and_norm:
-        return index_for_vert_and_norm[key]
-    else:
-        result = resolved_vertex_count
-        resolved_vertex_count = resolved_vertex_count + 1
-        
-        index_for_vert_and_norm[key] = result
-        
-        vertex_lines_out.append(format_vector(v) + '\n')
-        if not is_normalized(vn):
-            print 'Bug: writing unnormalized normal %s' % format_normal(vn)
-        normals_lines_out.append(format_normal(vn) + '\n')
-        
-        return result
-
-
-def magnitude(v):
-    """ magnitude
-        Return the magnitude/length of a vector.
-        """
-    x, y, z = v
-    return math.sqrt(x * x + y * y + z * z)
-
-
-def normalize(v):
-    """ normalize
-        Normalize a vector, specified as a tuple of three components.
-    """
-    scale = 1.0 / magnitude(v)
-    return x * scale, y * scale, z * scale
-
-
-def is_normalized(v):
-    """ is_normalized
-        Test whether a vector is within 1e-5 of a normalized vector.
-    """
-    return abs(magnitude(v) - 1.0) < 1e-5;
-
-
-def vector_add(v1, v2):
-    return v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]
-
-
-def vector_subtract(v1, v2):
-    return v1[0] - v2[0], v1[1] - v2[1], v1[2] - v2[2]
-
-
-def vector_flip(v):
-    return vector_subtract((0, 0, 0), v)
-
-
-def dot_product(v1, v2):
-    return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
-
-
-def cross_product(v1, v2):
-    x = v1[1] * v2[2] - v2[1] * v1[2]
-    y = v1[2] * v2[0] - v2[2] * v1[0]
-    z = v1[0] * v2[1] - v2[0] * v1[1]
-    return x, y, z
-
-
-def average_normal(n1, n2, n3):
-    """ average_normal
-        Calculate the normalized sum of three vectors.
-    """
-    return normalize(vector_add(n1, vector_add(n2, n3)))
-
-
-def normal_to_surface(v1, v2, v3):
-    """ normal_to_surface
-        Find a normal to a surface spanned by three points.
-    """
-    d0 = vector_subtract(v2, v1)
-    d1 = vector_subtract(v3, v2)
-    return normalize(cross_product(d0, d1))
-
-
-def should_reverse_winding(v1, v2, v3, normal):
-    """ should_reverse_winding
-        Determine whether to reverse the winding of the triangle (v1, v2, v3)
-        based on current winding mode and face normal.
-    """
-    if args.winding_mode == 0:
-        return False
-    
-    elif args.winding_mode == 1:
-        return True
-    
-    else:
-        calculatedNormal = normal_to_surface(v3, v2, v1)
-        if normal == (0, 0, 0):
-            normal = vector_flip(calculatedNormal)
-        
-        if args.winding_mode == 2:
-            # Guess, using the assumptions that normals should point more "outwards"
-            # than "inwards".
-            if (dot_product(normal, calculatedNormal) < 0.0):
-                return True
-            else:
-                return False
-        
-        elif args.winding_mode == 3:
-            # Buggy calculation traditionally used by Oolite.
-            if (normal[0] * calculatedNormal[0] < 0.0) or (normal[1] * calculatedNormal[1] < 0.0) or (normal[2] * calculatedNormal[2] < 0.0):
-                return True
-            else:
-                return False
-    
-    print 'Unknown normal winding mode %u' % (args.winding_mode)
-    exit(-1)
-
-
+#
+# Argument handling
+#
 class _ListWindingModesAction(argparse.Action):
     
     """ _ListWindingModesAction
@@ -291,6 +258,84 @@ argParser.add_argument('-L', '--list-winding-modes', action=_ListWindingModesAct
 args = argParser.parse_args()
 
 
+#
+# Processing helpers
+#
+def vertex_reference(n, nv):
+    if n < 0:
+        return n + nv
+    else:
+        return n - 1
+
+
+resolved_vertex_count = 0
+def resolve_vertex(v, vn, index_for_vert_and_norm, vertex_lines_out, normals_lines_out):
+    """ resolve_vertex
+        Returns a unique index for each (vertex, normal) pair. When a new pair
+        is seen, a new index is generated and the relevant lines are added to
+        the output buffers for the VERTEX and NORMALS sections.
+        
+        This is necessary because OBJ uses separate index spaces for vertex
+        positions and normals, but DAT requires one index per pair.
+    """
+    global resolved_vertex_count
+    v = clean_vector(v)
+    vn = clean_vector(vn)
+    key = v, vn
+    if key in index_for_vert_and_norm:
+        return index_for_vert_and_norm[key]
+    else:
+        result = resolved_vertex_count
+        resolved_vertex_count = resolved_vertex_count + 1
+        
+        index_for_vert_and_norm[key] = result
+        
+        vertex_lines_out.append(format_vector(v) + '\n')
+        if not is_vector_normalized(vn):
+            print 'Bug: writing unnormalized normal %s' % format_normal(vn)
+        normals_lines_out.append(format_normal(vn) + '\n')
+        
+        return result
+
+
+def should_reverse_winding(v1, v2, v3, normal):
+    """ should_reverse_winding
+        Determine whether to reverse the winding of the triangle (v1, v2, v3)
+        based on current winding mode and face normal.
+    """
+    if args.winding_mode == 0:
+        return False
+    
+    elif args.winding_mode == 1:
+        return True
+    
+    else:
+        calculatedNormal = vector_normal_to_surface(v3, v2, v1)
+        if normal == (0, 0, 0):
+            normal = vector_flip(calculatedNormal)
+        
+        if args.winding_mode == 2:
+            # Guess, using the assumptions that normals should point more "outwards"
+            # than "inwards".
+            if (vector_dot_product(normal, calculatedNormal) < 0.0):
+                return True
+            else:
+                return False
+        
+        elif args.winding_mode == 3:
+            # Buggy calculation traditionally used by Oolite.
+            if (normal[0] * calculatedNormal[0] < 0.0) or (normal[1] * calculatedNormal[1] < 0.0) or (normal[2] * calculatedNormal[2] < 0.0):
+                return True
+            else:
+                return False
+    
+    print 'Unknown normal winding mode %u' % (args.winding_mode)
+    exit(-1)
+
+
+#
+# Grand processing loop
+#
 for input_file_name in args.files:
     # Select output name and open files
     output_file_name = input_file_name.lower().replace('.obj', '.dat')
@@ -382,9 +427,9 @@ for input_file_name in args.files:
                 y = float(tokens[2])
                 z = float(tokens[3])
                 n = (x, y, z)
-                if not is_normalized(n):
+                if not is_vector_normalized(n):
                     print 'Warning: read unnormalized normal %s' % format_vector(n);
-                normal.append(normalize((x, y, z)))
+                normal.append(vector_normalize((x, y, z)))
                 
             if tokens[0] == 'vt':
                 uv.append((float(tokens[1]), 1.0 - float(tokens[2])))
