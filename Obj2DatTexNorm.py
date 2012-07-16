@@ -78,7 +78,7 @@ def format_number(n):
         return val
 
 
-def format_vertex(v):
+def format_vector(v):
     if args.pretty_output:
         return '% .5f,% .5f,% .5f' % v
     else:
@@ -88,9 +88,9 @@ def format_vertex(v):
 
 def format_normal(n):
     if args.flip_normals:
-        return format_vertex(vector_flip(n))
+        return format_vector(vector_flip(n))
     else:
-        return format_vertex(n)
+        return format_vector(n)
 
 
 def format_textcoord(st):
@@ -123,19 +123,35 @@ def resolve_vertex(v, vn, index_for_vert_and_norm, vertex_lines_out, normals_lin
         
         index_for_vert_and_norm[key] = result
         
-        vertex_lines_out.append(format_vertex(v) + '\n')
+        vertex_lines_out.append(format_vector(v) + '\n')
+        if not is_normalized(vn):
+            print 'Bug: writing unnormalized normal %s' % format_normal(vn)
         normals_lines_out.append(format_normal(vn) + '\n')
         
         return result
 
 
-def normalize(n):
+def magnitude(v):
+    """ magnitude
+        Return the magnitude/length of a vector.
+        """
+    x, y, z = v
+    return math.sqrt(x * x + y * y + z * z)
+
+
+def normalize(v):
     """ normalize
         Normalize a vector, specified as a tuple of three components.
     """
-    x, y, z = n
-    scale = 1.0 / math.sqrt(x * x + y * y + z * z)
+    scale = 1.0 / magnitude(v)
     return x * scale, y * scale, z * scale
+
+
+def is_normalized(v):
+    """ is_normalized
+        Test whether a vector is within 1e-5 of a normalized vector.
+    """
+    return abs(magnitude(v) - 1.0) < 1e-5;
 
 
 def vector_add(v1, v2):
@@ -365,6 +381,9 @@ for input_file_name in args.files:
                 x = -float(tokens[1])
                 y = float(tokens[2])
                 z = float(tokens[3])
+                n = (x, y, z)
+                if not is_normalized(n):
+                    print 'Warning: read unnormalized normal %s' % format_vector(n);
                 normal.append(normalize((x, y, z)))
                 
             if tokens[0] == 'vt':
