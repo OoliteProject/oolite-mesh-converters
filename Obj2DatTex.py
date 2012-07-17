@@ -26,7 +26,7 @@ print inputfilenames
 for inputfilename in inputfilenames:
 	outputfilename = inputfilename.lower().replace(".obj", ".dat")
 	if (outputfilename == inputfilename):
-		outputfilename = outputfilename.append(".1")
+		outputfilename += ".1"
 	print inputfilename+"->"+outputfilename
 	inputfile = open( inputfilename, "r")
 	lines = inputfile.read().splitlines(0)

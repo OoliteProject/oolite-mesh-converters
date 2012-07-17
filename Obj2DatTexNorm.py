@@ -342,7 +342,7 @@ for input_file_name in args.files:
     # Select output name and open files
     output_file_name = input_file_name.lower().replace('.obj', '.dat')
     if output_file_name == input_file_name:
-        output_file_name = output_file_name,append('.1')
+        output_file_name += '.1'
     input_display_name = os.path.basename(input_file_name)
     output_display_name = os.path.basename(output_file_name)
     
