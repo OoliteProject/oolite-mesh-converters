@@ -520,7 +520,7 @@ for input_file_name in args.files:
     
     ### Write output.
     output_file.write('// Converted by Obj2DatTexNorm.py Wavefront OBJ file conversion script\n')
-    output_file.write('// (c) 2005-2012 By Giles Williams and Jens Ayton\n')
+    output_file.write('// (c) 2005-2013 By Giles Williams and Jens Ayton\n')
     output_file.write('// \n')
     output_file.write('// original file: "%s"\n' % input_display_name)
     output_file.write('// \n')
