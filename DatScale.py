@@ -1,7 +1,7 @@
 #!/usr/bin/python 
 
 """ 
-This script takes an Oolte .dat file, scales it by a specified scale factor,
+This script takes an Oolite .dat file, scales it by a specified scale factor,
 and writes it out again (appending the scale factor to the name).
 
 Only the VERTEX section is modified. The rest of the file is passed through
