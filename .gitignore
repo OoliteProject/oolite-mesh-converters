@@ -1,0 +1,11 @@
+# Windows cruft
+Thumbs.db
+ehthumbs.db
+
+# Mac OS X cruft
+.DS_Store
+Icon?
+
+# Python cruft
+*.pyc
+*.pyo
