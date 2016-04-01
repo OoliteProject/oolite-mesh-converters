@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 
 
 # EXTENSIONS  : "obj" "OBJ"                     # Accepted file extentions
@@ -218,7 +218,7 @@ class _ListWindingModesAction(argparse.Action):
               help=help)
     
     def __call__(self, parser, namespace, values, option_string=None):
-        print '''Winding determines which side of a triangle is the outside.
+        print """Winding determines which side of a triangle is the outside.
 The --winding-mode option controls how the winding is selected for each
 triangle. If a model appears "inside-out" or has missing faces, you need
 to adjust this.
@@ -229,7 +229,7 @@ Available modes:
   2: select winding automatically for each face based on normals.
   3: select winding automatically for each face, but buggily (the same
      behaviour as Oolite for old-style model files). You probably don't
-     want this.'''
+     want this."""
         parser.exit()
 
 
@@ -271,7 +271,7 @@ def vertex_reference(n, nv):
 
 
 resolved_vertex_count = 0
-def resolve_vertex(v, vn, index_for_vert_and_norm, vertex_lines_out, normals_lines_out):
+def resolve_vertex(v, vn, tc, index_for_vert_norm_and_tex, vertex_lines_out, normals_lines_out):
     """ resolve_vertex
         Returns a unique index for each (vertex, normal) pair. When a new pair
         is seen, a new index is generated and the relevant lines are added to
@@ -283,14 +283,14 @@ def resolve_vertex(v, vn, index_for_vert_and_norm, vertex_lines_out, normals_lin
     global resolved_vertex_count
     v = clean_vector(v)
     vn = clean_vector(vn)
-    key = v, vn
-    if key in index_for_vert_and_norm:
-        return index_for_vert_and_norm[key]
+    key = v, vn, tc
+    if key in index_for_vert_norm_and_tex:
+        return index_for_vert_norm_and_tex[key]
     else:
         result = resolved_vertex_count
         resolved_vertex_count = resolved_vertex_count + 1
         
-        index_for_vert_and_norm[key] = result
+        index_for_vert_norm_and_tex[key] = result
         
         vertex_lines_out.append(format_vector(v) + '\n')
         if not is_vector_normalized(vn):
@@ -369,7 +369,7 @@ for input_file_name in args.files:
     texcoords_for_face=[]
     interpret_texture = 0
     material_rename = {}
-    index_for_vert_and_norm = {}
+    index_for_vert_norm_and_tex = {}
     names_lines_out = []
     materials_used = []
     max_v = [0.0, 0.0, 0.0]
@@ -486,9 +486,17 @@ for input_file_name in args.files:
                     xp = (d0[1] * d1[2] - d0[2] * d1[1], d0[2] * d1[0] - d0[0] * d1[2], d0[0] * d1[1] - d0[1] * d1[0])
                     det = math.sqrt(xp[0]*xp[0] + xp[1]*xp[1] + xp[2]*xp[2])
                     if (det > 0):
-                        rv1 = resolve_vertex(vertex[v1], normal[vn1], index_for_vert_and_norm, vertex_lines_out, normals_lines_out)
-                        rv2 = resolve_vertex(vertex[v2], normal[vn2], index_for_vert_and_norm, vertex_lines_out, normals_lines_out)
-                        rv3 = resolve_vertex(vertex[v3], normal[vn3], index_for_vert_and_norm, vertex_lines_out, normals_lines_out)
+                        if interpret_texture:
+                            tc1 = uv[vt1]
+                            tc2 = uv[vt2]
+                            tc3 = uv[vt3]
+                        else:
+                            tc1 = None
+                            tc2 = None
+                            tc3 = None
+                        rv1 = resolve_vertex(vertex[v1], normal[vn1], tc1, index_for_vert_norm_and_tex, vertex_lines_out, normals_lines_out)
+                        rv2 = resolve_vertex(vertex[v2], normal[vn2], tc2, index_for_vert_norm_and_tex, vertex_lines_out, normals_lines_out)
+                        rv3 = resolve_vertex(vertex[v3], normal[vn3], tc3, index_for_vert_norm_and_tex, vertex_lines_out, normals_lines_out)
                         face_normal = average_normal(normal[vn1], normal[vn2], normal[vn3])
                         
                         if should_reverse_winding(vertex[v1], vertex[v2], vertex[v3], face_normal):
