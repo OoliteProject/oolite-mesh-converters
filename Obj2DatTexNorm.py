@@ -253,6 +253,7 @@ argParser.add_argument('-m', '--preserve-material-names', action='store_false', 
                        help='Keep abstract material names from material library, instead of renaming materials after their diffuse map. Only use if you\'ll be creating material dictionaries.')
 argParser.add_argument('-p', '--pretty-output', action='store_true', dest='pretty_output',
                        help='Create a file that\'s easier for humans to read, but larger and slower to parse')
+argParser.add_argument('--no-texture-split', action='store_true', help='Don\'t split vertices if texture coordinates differ (matches behaviour pre-github issue 184)')
 
 argParser.add_argument('-L', '--list-winding-modes', action=_ListWindingModesAction,
                        help=argparse.SUPPRESS)
@@ -486,7 +487,7 @@ for input_file_name in args.files:
                     xp = (d0[1] * d1[2] - d0[2] * d1[1], d0[2] * d1[0] - d0[0] * d1[2], d0[0] * d1[1] - d0[1] * d1[0])
                     det = math.sqrt(xp[0]*xp[0] + xp[1]*xp[1] + xp[2]*xp[2])
                     if (det > 0):
-                        if interpret_texture:
+                        if interpret_texture and not args.no_texture_split:
                             tc1 = uv[vt1]
                             tc2 = uv[vt2]
                             tc3 = uv[vt3]
