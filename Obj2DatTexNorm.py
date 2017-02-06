@@ -73,7 +73,9 @@ def vector_normalize(v):
     try:
         return vector_scale(v, 1.0 / vector_magnitude(v))
     except ZeroDivisionError:
-        return (0,0,1)
+        if args.accept_zero_normals:
+            return (0,0,1)
+        raise
 
 def is_vector_normalized(v):
     """ is_vector_normalized
@@ -259,6 +261,7 @@ argParser.add_argument('--no-texture-split', action='store_true', help='Don\'t s
 
 argParser.add_argument('-L', '--list-winding-modes', action=_ListWindingModesAction,
                        help=argparse.SUPPRESS)
+argParser.add_argument('--accept-zero-normals', action='store_true', help = 'Accept zero normals')
 
 args = argParser.parse_args()
 
