@@ -11,11 +11,11 @@ and surface normals calculated for each triangle.
 import sys, string, math
 
 inputfilenames = sys.argv[1:]
-print "converting..."
-print inputfilenames
+print("converting...")
+print(inputfilenames)
 for inputfilename in inputfilenames:
 	outputfilename = inputfilename.lower().replace(".mesh",".dat")
-	print inputfilename+"->"+outputfilename
+	print(inputfilename+"->"+outputfilename)
 	inputfile = open(inputfilename,"r")
 	lines = inputfile.read().splitlines(0)
 	outputfile = open(outputfilename,"w")
@@ -85,8 +85,8 @@ for inputfilename in inputfilenames:
 	outputfile.write('\n')
 	outputfile.write('END\n')
 	outputfile.close();
-print "done"
-print ""
+print("done")
+print("")
 #
 #	end
 #

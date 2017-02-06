@@ -126,7 +126,7 @@ class DATLexer:
 	
 
 if len(sys.argv) != 3:
-	print "Expected two arguments, file name and scale factor."
+	print("Expected two arguments, file name and scale factor.")
 	exit(1)
 
 inputFileName = sys.argv[1]
@@ -141,7 +141,7 @@ else:
 
 outputFileName += " x " + str(factor) + ".dat";
 
-print "Scaling \"" + inputFileName + "\" by " + str(factor) + " to \"" + outputFileName + "\"..."
+print("Scaling \"" + inputFileName + "\" by " + str(factor) + " to \"" + outputFileName + "\"...")
 
 nVerts = 0
 inputFile = open(inputFileName, "r")

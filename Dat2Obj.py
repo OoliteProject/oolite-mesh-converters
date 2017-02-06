@@ -11,14 +11,14 @@ and surface normals need not be calculated.
 import sys, string, math
 
 inputfilenames = sys.argv[1:]
-print "converting..."
-print inputfilenames
+print("converting...")
+print(inputfilenames)
 for inputfilename in inputfilenames:
 	outputfilename = inputfilename.lower().replace(".dat",".obj")
 	materialfilename = inputfilename.lower().replace(".dat",".mtl")
 	mtllibname = string.split(materialfilename, "/")[-1]
 	objname=mtllibname.replace(".mtl","")
-	print inputfilename+"->"+outputfilename+" & "+materialfilename
+	print(inputfilename+"->"+outputfilename+" & "+materialfilename)
 	inputfile = open(inputfilename,"r")
 	lines = inputfile.read().splitlines(0)
 	
@@ -88,8 +88,8 @@ for inputfilename in inputfilenames:
 	materialfile.write(	'Ks 1.00000 1.00000 1.00000\nKe 0.00000e+0 0.00000e+0 0.00000e+0\n\n')
 	materialfile.close();
 
-print "done"
-print ""
+print("done")
+print("")
 #
 #	end
 #

@@ -17,8 +17,8 @@ def tex_index(tex, vts):
 	return -1
 	
 inputfilenames = sys.argv[1:] 
-print "converting..." 
-print inputfilenames 
+print("converting...") 
+print(inputfilenames) 
 for inputfilename in inputfilenames: 
    outputfilename = inputfilename.lower().replace(".dat",".obj") 
    materialfilename = inputfilename.lower().replace(".dat",".mtl") 
@@ -54,9 +54,9 @@ for inputfilename in inputfilenames:
 				texfile=tokens[0]
 			else:
 				if tokens[0] != texfile:
-					print ''
-					print inputfilename+' : more than 1 texture, cannot convert. Use Dat2Obj instead.'
-					print ''
+					print('')
+					print(inputfilename+' : more than 1 texture, cannot convert. Use Dat2Obj instead.')
+					print('')
 					texErr=1
 					break
 			points = tokens[2:]
@@ -134,10 +134,10 @@ for inputfilename in inputfilenames:
 	   materialfile.write('Ks 1.00000 1.00000 1.00000\nKe 0.00000e+0 0.00000e+0 0.00000e+0\n') 
 	   materialfile.write('map_Kd '+texfile+'\n\n') 
 	   materialfile.close();
-	   print inputfilename+"->"+outputfilename+" & "+materialfilename 
+	   print(inputfilename+"->"+outputfilename+" & "+materialfilename) 
 
-print "done" 
-print "" 
+print("done") 
+print("") 
 # 
 #   end 
 # 

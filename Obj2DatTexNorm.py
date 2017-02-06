@@ -218,7 +218,7 @@ class _ListWindingModesAction(argparse.Action):
               help=help)
     
     def __call__(self, parser, namespace, values, option_string=None):
-        print """Winding determines which side of a triangle is the outside.
+        print("""Winding determines which side of a triangle is the outside.
 The --winding-mode option controls how the winding is selected for each
 triangle. If a model appears "inside-out" or has missing faces, you need
 to adjust this.
@@ -229,7 +229,7 @@ Available modes:
   2: select winding automatically for each face based on normals.
   3: select winding automatically for each face, but buggily (the same
      behaviour as Oolite for old-style model files). You probably don't
-     want this."""
+     want this.""")
         parser.exit()
 
 
@@ -295,7 +295,7 @@ def resolve_vertex(v, vn, tc, index_for_vert_norm_and_tex, vertex_lines_out, nor
         
         vertex_lines_out.append(format_vector(v) + '\n')
         if not is_vector_normalized(vn):
-            print 'Bug: writing unnormalized normal %s' % format_normal(vn)
+            print('Bug: writing unnormalized normal %s' % format_normal(vn))
         normals_lines_out.append(format_normal(vn) + '\n')
         
         return result
@@ -332,7 +332,7 @@ def should_reverse_winding(v1, v2, v3, normal):
             else:
                 return False
     
-    print 'Unknown normal winding mode %u' % (args.winding_mode)
+    print('Unknown normal winding mode %u' % (args.winding_mode))
     exit(-1)
 
 
@@ -347,7 +347,7 @@ for input_file_name in args.files:
     input_display_name = os.path.basename(input_file_name)
     output_display_name = os.path.basename(output_file_name)
     
-    print input_display_name + ' -> ' + output_display_name
+    print(input_display_name + ' -> ' + output_display_name)
     
     input_file = open(input_file_name, 'r')
     lines = input_file.read().splitlines(0)
@@ -383,7 +383,7 @@ for input_file_name in args.files:
             if tokens[0] == 'mtllib':
                 path = os.path.dirname(input_file_name)
                 material_file_name = os.path.join(path, tokens[1])
-                print '  Material library file: %s' % material_file_name
+                print('  Material library file: %s' % material_file_name)
                 material_file = open(material_file_name, 'r')
                 new_material = False
                 for material_line in material_file.read().splitlines(0):
@@ -408,7 +408,7 @@ for input_file_name in args.files:
                                 # Add it to the used materials list and rename table.
                                 name = material_tokens[1]
                                 materials_used.append(name)
-                                print '  Material %s -> %s' % (new_material_name, name)
+                                print('  Material %s -> %s' % (new_material_name, name))
                                 if args.pretty_output:
                                     material_rename[new_material_name] = name
                                 else:
@@ -442,7 +442,7 @@ for input_file_name in args.files:
                 z = float(tokens[3])
                 n = (x, y, z)
                 if not is_vector_normalized(n):
-                    print 'Warning: read unnormalized normal %s' % format_vector(n)
+                    print('Warning: read unnormalized normal %s' % format_vector(n))
                 normal.append(vector_normalize((x, y, z)))
                 
             if tokens[0] == 'vt':
@@ -455,7 +455,7 @@ for input_file_name in args.files:
         if (tokens != []):
             if (tokens[0] == 'usemtl'):
                 textureName = tokens[1]
-                if (material_rename.has_key(textureName)):
+                if (textureName in material_rename):
                     textureName = material_rename[textureName]
                 interpret_texture = 1
                 texture.append(textureName)
@@ -478,7 +478,7 @@ for input_file_name in args.files:
                         vt3 = vertex_reference(int(bits[1]), vertex_count)
                     else:
                         if interpret_texture:
-                            print 'File does not provide texture coordinates! Materials will not be exported.'
+                            print('File does not provide texture coordinates! Materials will not be exported.')
                         interpret_texture = 0
                     if (bits[2] > ''): vn3 = vertex_reference(int(bits[2]), normal_count)
                     
@@ -580,4 +580,4 @@ for input_file_name in args.files:
     input_file.close()
 
 
-print 'Done.\n'
+print('Done.\n')

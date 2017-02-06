@@ -12,13 +12,13 @@ No surface normals are calculated.
 import sys, string, math
 
 inputfilenames = sys.argv[1:]
-print "converting..."
-print inputfilenames
+print("converting...")
+print(inputfilenames)
 for inputfilename in inputfilenames:
 	outputfilename = inputfilename.lower().replace(".mesh",".obj")
 	materialfilename = inputfilename.lower().replace(".mesh",".mtl")
 	mtllibname = string.split(materialfilename, "/")[-1]
-	print inputfilename+"->"+outputfilename+" & "+materialfilename
+	print(inputfilename+"->"+outputfilename+" & "+materialfilename)
 	inputfile = open(inputfilename,"r")
 	lines = inputfile.read().splitlines(0)
 	outputfile = open(outputfilename,"w")
@@ -73,7 +73,7 @@ for inputfilename in inputfilenames:
 					vv = 0.0
 				uv_key = 'vt %.5f %.5f\n' % (uu, vv)
 				uv_index = n_uvs
-				if (uvIndexForKey.has_key(uv_key)):
+				if (uv_key in uvIndexForKey):
 					# existing uv coordinates
 					uv_index = uvIndexForKey[uv_key]
 				else:
@@ -118,8 +118,8 @@ for inputfilename in inputfilenames:
 	materialfile.write('# exported using Mesh2Obj.py (C) Giles Williams 2005\n')
 	# check that we have textures for every vertex...
 	okayToWriteTexture = 1
-	print "uvsForTexture :"
-	print uvsForTexture
+	print("uvsForTexture :")
+	print(uvsForTexture)
 	if (len(textureForFace) != len(face)):
 		okayToWriteTexture = 0
 	outputfile.write('# groups ...\n')
@@ -148,8 +148,8 @@ for inputfilename in inputfilenames:
 	# next texture
 	outputfile.close();
 	materialfile.close();
-print "done"
-print ""
+print("done")
+print("")
 #
 #	end
 #

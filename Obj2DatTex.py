@@ -21,13 +21,13 @@ def vertex_reference(n, nv):
 	return n - 1
 
 inputfilenames = sys.argv[1:]
-print "converting..."
-print inputfilenames
+print("converting...")
+print(inputfilenames)
 for inputfilename in inputfilenames:
 	outputfilename = inputfilename.lower().replace(".obj", ".dat")
 	if (outputfilename == inputfilename):
 		outputfilename += ".1"
-	print inputfilename+"->"+outputfilename
+	print(inputfilename+"->"+outputfilename)
 	inputfile = open( inputfilename, "r")
 	lines = inputfile.read().splitlines(0)
 	outputfile = open( outputfilename, "w")
@@ -62,7 +62,7 @@ for inputfilename in inputfilenames:
 				path = string.split(inputfilename, '/')
 				path[-1] = tokens[1]
 				materialfilename = string.join(path,'/')
-				print "going to open material library file: %s" % materialfilename
+				print("going to open material library file: %s" % materialfilename)
 				infile = open( materialfilename, "r")
 				mlines = infile.read().splitlines(0)
 				newMaterial = 0
@@ -75,7 +75,7 @@ for inputfilename in inputfilenames:
 						if (tokens1[0] == 'map_Kd'):
 							if (newMaterial):
 								materials[newMaterialName] = tokens1[1]
-								print "Material %s -> %s" % (newMaterialName, tokens1[1])
+								print("Material %s -> %s" % (newMaterialName, tokens1[1]))
 							newMaterial = 0
 	#print "materials :"
 	#print materials
@@ -135,7 +135,7 @@ for inputfilename in inputfilenames:
 					smoothing_group = 0
 			if (tokens[0] == 'usemtl'):
 				textureName = tokens[1]
-				if (materials.has_key(textureName)):
+				if (textureName in materials):
 					textureName = materials[textureName]
 				interpretTexture = 1
 				texture.append(textureName)
@@ -192,7 +192,7 @@ for inputfilename in inputfilenames:
 	outputfile.write('// \n')
 	outputfile.write('// model size: %.3f x %.3f x %.3f\n' % ( max_v[0]-min_v[0], max_v[1]-min_v[1], max_v[2]-min_v[2]))
 	outputfile.write('// \n')
-	outputfile.write('// textures used: %s\n' % uvsForTexture.keys())
+	outputfile.write('// textures used: %s\n' % list(uvsForTexture.keys()))
 	outputfile.write('// \n')
 	outputfile.write('NVERTS %d\n' % n_verts)
 	outputfile.write('NFACES %d\n' % n_faces)
@@ -225,8 +225,8 @@ for inputfilename in inputfilenames:
 	outputfile.write('\n')
 	outputfile.write('END\n')
 	outputfile.close();
-print "done"
-print ""
+print("done")
+print("")
 #
 #	end
 #
