@@ -70,8 +70,10 @@ def vector_normalize(v):
     """ vector_normalize
         Return a normalized vector, i.e. one scaled so its magnitude is 1.
     """
-    return vector_scale(v, 1.0 / vector_magnitude(v))
-
+    try:
+        return vector_scale(v, 1.0 / vector_magnitude(v))
+    except ZeroDivisionError:
+        return (0,0,1)
 
 def is_vector_normalized(v):
     """ is_vector_normalized
